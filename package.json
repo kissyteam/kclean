@@ -15,6 +15,13 @@
     "cmd",
     "module"
   ],
+  "dependencies": {
+      "escodegen": "1.x",
+      "esprima": "1.x",
+      "estraverse": "1.x",
+      "lodash": "2.x",
+      "uglify-js": "^2.4.15"
+  },
   "author": "taojie.hjp@taobao.com",
   "license": "ISC",
   "bugs": {
