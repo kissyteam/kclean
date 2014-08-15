@@ -4,7 +4,7 @@ kclean
 A build tool that converts KISSY module code to standard JavaScript.
 
 ### 如何使用
-#### KISSY(默认)
+##### KISSY(默认)
 ```js
 var kclean = require('kclean'),
     fs = require('fs');
@@ -17,7 +17,7 @@ var code = fs.readFileSync("code.js").toString(),
 fs.writeFileSync("clean.js",cleanedCode);
 
 ```
-#### sea.js
+##### sea.js
 ```js
 var kclean = require('kclean'),
     fs = require('fs');
@@ -33,7 +33,7 @@ var code = fs.readFileSync("sea.js").toString(),
 
 fs.writeFileSync("clean_sea.js",cleanedCode);
 ```
-#### 转化为原生代码
+##### 转化为原生代码
 ```js
 var kclean = require('kclean'),
     fs = require('fs');
