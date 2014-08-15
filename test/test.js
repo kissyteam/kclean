@@ -4,7 +4,6 @@ var kclean = require('kclean'),
 var code = fs.readFileSync("code.js").toString(),
     cleanedCode = kclean.clean(code,{
                                      prefixMode:"camelCase",
-                                     //minify:true,
                                      outputModule:"udata/init"
                               });
 
