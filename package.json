@@ -1,6 +1,6 @@
 {
   "name": "kclean",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "A build tool that converts KISSY module code to standard JavaScript.",
   "main": "lib/index.js",
   "scripts": {
