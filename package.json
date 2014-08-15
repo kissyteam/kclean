@@ -1,8 +1,8 @@
 {
   "name": "kclean",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A build tool that converts KISSY module code to standard JavaScript.",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -19,8 +19,7 @@
       "escodegen": "1.x",
       "esprima": "1.x",
       "estraverse": "1.x",
-      "lodash": "2.x",
-      "uglify-js": "^2.4.15"
+      "lodash": "2.x"
   },
   "author": "taojie.hjp@taobao.com",
   "license": "ISC",
