@@ -1,10 +1,13 @@
 var kclean = require('kclean'),
     fs = require('fs');
 
-var code = fs.readFileSync("code.js").toString(),
+var code = fs.readFileSync("sea.js").toString(),
     cleanedCode = kclean.clean(code,{
                                      prefixMode:"camelCase",
-                                     outputModule:"udata/init"
+                                     wrap:{
+                                        start:"(function(){",
+                                        end:"\nsysMain.init();\n})();"
+                                     }
                               });
 
 fs.writeFileSync("clean.js",cleanedCode);

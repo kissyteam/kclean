@@ -1,7 +1,7 @@
 var kclean = require('kclean'),
     fs = require('fs');
 
-var code = fs.readFileSync("define.js").toString(),
+var code = fs.readFileSync("sea.js").toString(),
     cleanedCode = kclean.clean(code,{
                                      prefixMode:"camelCase",
                                      outputModule:"sys/main",
@@ -10,4 +10,4 @@ var code = fs.readFileSync("define.js").toString(),
                                      }
                               });
 
-fs.writeFileSync("clean_define.js",cleanedCode);
+fs.writeFileSync("clean_sea.js",cleanedCode);
