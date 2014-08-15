@@ -17,3 +17,9 @@ var code = fs.readFileSync("code.js").toString(),
 fs.writeFileSync("clean.js",cleanedCode);
 
 ```
+
+#### gulp插件
+gulp-kclean [https://www.npmjs.org/package/gulp-kclean](https://www.npmjs.org/package/gulp-kclean)
+
+#### grunt插件
+暂未开发
