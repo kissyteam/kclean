@@ -11,8 +11,7 @@ var kclean = require('kclean'),
 
 var code = fs.readFileSync("code.js").toString(),
     cleanedCode = kclean.clean(code,{
-                                     prefixMode:"camelCase",
-                                     outputModule:"udata/init" //输出模块
+                                outputModule:"udata/init" //输出模块
                               });
 
 fs.writeFileSync("clean.js",cleanedCode);
