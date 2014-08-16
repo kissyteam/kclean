@@ -24,14 +24,11 @@ var kclean = require('kclean'),
 
 var code = fs.readFileSync("sea.js").toString(),
     cleanedCode = kclean.clean(code,{
-         prefixMode:"camelCase",
-         outputModule:"sys/main",
-         wrap:{
-            start: 'define("{moduleName}", {dependencies}, function(require, exports, module) {\n',
-         }
+         outputModule:"sys/main"
     });
 
 fs.writeFileSync("clean_sea.js",cleanedCode);
+//配置完全一样，kclean内部会自动识别
 ```
 ##### 转化为原生代码
 ```js
