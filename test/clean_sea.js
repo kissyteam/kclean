@@ -1,7 +1,7 @@
 define("sys/main", [], function(require, exports, module) {
 
-var sysBrowser, sysConfig, sysUtil, sysStorage, sysStatusManager, sysMain;
-sysBrowser = function (exports) {
+var sys_browser, sys_config, sys_util, sys_storage, sys_status_manager, sys_main;
+sys_browser = function (exports) {
   exports = {
     getCurrentTab: function (callback) {
       chrome.tabs.query({
@@ -28,7 +28,7 @@ sysBrowser = function (exports) {
   };
   return exports;
 }();
-sysConfig = function (exports) {
+sys_config = function (exports) {
   var hosts = [
       '*.taobao.com',
       '*.taobao.net',
@@ -122,7 +122,7 @@ sysConfig = function (exports) {
   };
   return exports;
 }();
-sysUtil = function (exports) {
+sys_util = function (exports) {
   exports = {
     queryString: function (s) {
       var query = {};
@@ -178,7 +178,7 @@ sysUtil = function (exports) {
   };
   return exports;
 }();
-sysStorage = function (exports) {
+sys_storage = function (exports) {
   var ls = window.localStorage;
   function Storage(key) {
     this.key = key;
@@ -222,8 +222,8 @@ sysStorage = function (exports) {
   };
   return exports;
 }();
-sysStatusManager = function (exports) {
-  var Storage = sysStorage.alloc('udata');
+sys_status_manager = function (exports) {
+  var Storage = sys_storage.alloc('udata');
   var set = function (k, v) {
       Storage.set(k, v);
     }, get = function (k) {
@@ -282,8 +282,8 @@ sysStatusManager = function (exports) {
   };
   return exports;
 }();
-sysMain = function (exports) {
-  var Browser = sysBrowser, Config = sysConfig, Util = sysUtil, Storage = sysStorage, StatusManager = sysStatusManager;
+sys_main = function (exports) {
+  var Browser = sys_browser, Config = sys_config, Util = sys_util, Storage = sys_storage, StatusManager = sys_status_manager;
   var STATUS = Config.STATUS;
   ICONS = Config.ICONS, errorStorage = Storage.alloc('error'), uDataStorage = Storage.alloc('udata');
   function aplus() {
@@ -764,5 +764,5 @@ sysMain = function (exports) {
   };
   return exports;
 }();
-module.exports = sysMain;
+module.exports = sys_main;
 });
