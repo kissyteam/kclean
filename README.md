@@ -46,6 +46,8 @@ var code = fs.readFileSync("sea.js").toString(),
 
 fs.writeFileSync("clean.js",cleanedCode);
 ```
+##### modulex
+支持[https://github.com/kissyteam/modulex](https://github.com/kissyteam/modulex)
 
 #### gulp插件
 gulp-kclean [https://www.npmjs.org/package/gulp-kclean](https://www.npmjs.org/package/gulp-kclean)
