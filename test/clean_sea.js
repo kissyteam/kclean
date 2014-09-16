@@ -1,5 +1,5 @@
-define("sys/main", [], function(require, exports, module) {
-
+define("sys/main", ["./storage"], function(require, exports, module) {
+var storage = require("./storage");
 var sys_browser, sys_config, sys_util, sys_storage, sys_status_manager, sys_main;
 sys_browser = function (exports) {
   exports = {
@@ -223,7 +223,7 @@ sys_storage = function (exports) {
   return exports;
 }();
 sys_status_manager = function (exports) {
-  var Storage = sys_storage.alloc('udata');
+  var Storage = storage.alloc('udata');
   var set = function (k, v) {
       Storage.set(k, v);
     }, get = function (k) {
