@@ -305,7 +305,7 @@ module.exports = {
                     sendResponse(removed);
                 });
                 break;
-                
+
             case '/popup':
                 var error = errorStorage.get(data.tabId);
                 if(error){
@@ -825,7 +825,7 @@ module.exports = {
     }
 }
 });
-define('sys/storage',[],function(require, exports, module) {
+define('sys/storage',['sys/config'],function(require, exports, module) {
 var ls = window.localStorage;
 
 function Storage(key) {

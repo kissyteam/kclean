@@ -1,415 +1,767 @@
-modulex.add("anim/base", ["dom","util","promise"], function(require, exports, module) {
-var dom = require("dom");
-var _util_ = require("util");
-var promise = require("promise");
-/*
-combined modules:
-anim/base
-anim/base/utils
-anim/base/queue
-*/
-var anim_base_queue, anim_base_utils, anim_base;
-anim_base_queue = function (exports) {
-  /**
-   * @ignore queue data structure
-   * @author yiminghe@gmail.com
-   */
-  var Dom = dom;
-  var util = _util_;
-  var
-    // 队列集合容器
-    queueCollectionKey = util.guid('ks-queue-' + util.now() + '-'),
-    // 默认队列
-    queueKey = util.guid('ks-queue-' + util.now() + '-'), Q;
-  function getQueue(node, name, readOnly) {
-    name = name || queueKey;
-    var qu, quCollection = Dom.data(node, queueCollectionKey);
-    if (!quCollection && !readOnly) {
-      Dom.data(node, queueCollectionKey, quCollection = {});
-    }
-    if (quCollection) {
-      qu = quCollection[name];
-      if (!qu && !readOnly) {
-        qu = quCollection[name] = [];
+define('sys/config', [], function (require, exports, module) {
+  var hosts = [
+      '*.taobao.com',
+      '*.taobao.net',
+      '*.taobao.org',
+      '*.tw.taobao.com',
+      '*.taobao.ali.com',
+      '*.tmall.com',
+      '*.tmall.hk',
+      '*.juhuasuan.com',
+      '*.etao.com',
+      '*.tao123.com',
+      '*.aliyun.com',
+      '*.hitao.com',
+      '*.alibado.com',
+      '*.youshuyuan.com',
+      '*.yahoo.com.cn',
+      '*.aliloan.com',
+      '*.alibaba-inc.com',
+      '*.xiami.com',
+      '*.1688.com',
+      '*.yunos.com',
+      '*.atatech.org',
+      '*.laiwang.com',
+      '*.aliexpress.com',
+      '*.koubei.com',
+      '*.itao.com',
+      '*.alimama.com'
+    ], urls = {
+      debug: 'http://g.alicdn.com/udata/udata-pi/debug.html',
+      options: 'http://g.alicdn.com/udata/udata-pi/options.html'
+    }, STATUS = {
+      'ERROR': 0,
+      'RUNNING': 1,
+      'STOPPED': 2
+    }, ICONS = [
+      'error.png',
+      'running.png',
+      'stopped.png'
+    ];
+  module.exports = {
+    kissy4: 'https://s.tbcdn.cn/g/kissy/k/1.4.1/seed-min.js',
+    kissy5: 'http://g.tbcdn.cn/kissy/edge/2014.06.13/seed.js',
+    start: 'http://g.alicdn.com/udata/udata-pi/' + (localStorage['~debug'] ? 'start-debug.js' : 'start.js'),
+    hosts: hosts.map(function (item) {
+      item = item.replace('*.', '*').replace(/\./g, '\\.').replace('*', '.*');
+      return new RegExp(item);
+    }),
+    urls: urls,
+    urlList: function () {
+      var _urls = [];
+      for (var p in urls) {
+        _urls.push(urls[p]);
       }
-    }
-    return qu;
-  }
-  Q = {
-    queueCollectionKey: queueCollectionKey,
-    queue: function (node, queue, item) {
-      var qu = getQueue(node, queue);
-      qu.push(item);
-      return qu;
-    },
-    remove: function (node, queue, item) {
-      var qu = getQueue(node, queue, 1), index;
-      if (qu) {
-        index = util.indexOf(item, qu);
-        if (index > -1) {
-          qu.splice(index, 1);
+      return _urls;
+    }(),
+    popup: {
+      combine: true,
+      packages: {
+        'popup': {
+          combine: false,
+          base: 'https://s.tbcdn.cn/g/udata/userver/0.0.13/popup/',
+          ignorePackageNameInUri: true,
+          charset: 'utf-8'
         }
       }
-      if (qu && !qu.length) {
-        // remove queue data
-        Q.clearQueue(node, queue);
-      }
-      return qu;
     },
-    clearQueues: function (node) {
-      Dom.removeData(node, queueCollectionKey);
-    },
-    clearQueue: function clearQueue(node, queue) {
-      queue = queue || queueKey;
-      var quCollection = Dom.data(node, queueCollectionKey);
-      if (quCollection) {
-        delete quCollection[queue];
+    isValidUrl: function (url) {
+      var valid = false;
+      valid = this.urlList.some(function (page_url) {
+        return url.indexOf(page_url) > -1;
+      });
+      if (valid) {
+        return valid;
       }
-      if (util.isEmptyObject(quCollection)) {
-        Dom.removeData(node, queueCollectionKey);
-      }
+      var parser = document.createElement('a');
+      parser.href = url;
+      var host = parser.hostname;
+      parser = null;
+      return this.hosts.some(function (_host) {
+        return _host.test(host);
+      });
     },
-    dequeue: function (node, queue) {
-      var qu = getQueue(node, queue, 1);
-      if (qu) {
-        qu.shift();
-        if (!qu.length) {
-          // remove queue data
-          Q.clearQueue(node, queue);
+    isAplus: function (url) {
+      if (!url) {
+        return false;
+      }
+      return url.indexOf('dwaplus.taobao.ali.com') > -1 || url.indexOf('apluspre.taobao.ali.com') > -1 || url.indexOf('isAPlus=true') > -1;
+    },
+    STATUS: STATUS,
+    ICONS: ICONS
+  };
+});
+define('sys/util', [], function (require, exports, module) {
+  module.exports = {
+    queryString: function (s) {
+      var query = {};
+      if (!s) {
+        return query;
+      }
+      s.split('&').map(function (item) {
+        var item = item.split('='), val;
+        try {
+          val = decodeURIComponent(item[1] || '');
+        } catch (e) {
+          val = null;
         }
+        query[item[0]] = val;
+      });
+      return query;
+    },
+    ajax: function (url, callback) {
+      var req = new XMLHttpRequest();
+      req.open('GET', url, true);
+      req.onload = function () {
+        callback(req.responseText);
+      };
+      req.send(null);
+    },
+    injectKISSY: function (kissy, tabId, all, callback) {
+      this.ajax(kissy, function (code) {
+        chrome.tabs.executeScript(tabId, {
+          code: 'if(!window.KISSY){' + code + '}',
+          allFrames: all
+        }, callback);
+      });
+    },
+    injectScript: function (tabId, request, callback) {
+      function handleCode(code) {
+        if (code.indexOf('KISSY.add(') == -1 && 'mods' in request) {
+          code = 'KISSY.add("' + request.mods[0].name + '",function(S ,require, exports, module) {\n' + code + '})';
+        }
+        chrome.tabs.executeScript(tabId, {
+          code: code,
+          allFrames: request.all
+        }, callback);
       }
-      return qu;
+      var key = request.mods && request.mods[0].name;
+      if (request.debug && key && localStorage[key]) {
+        handleCode(localStorage[key]);
+      } else {
+        this.ajax(request.path, function (code) {
+          handleCode(code);
+        });
+      }
     }
   };
-  exports = Q;
+});
+define('sys/storage', ['sys/config'], function (require, exports, module) {
+  var ls = window.localStorage;
+  function Storage(key) {
+    this.key = key;
+  }
+  Storage.prototype = {
+    alloc: function (key) {
+      this.key = key;
+      return this;
+    },
+    find: function () {
+      var s = ls.getItem(this.key);
+      return s && JSON.parse(s);
+    },
+    get: function (k) {
+      var that = this, o = that.find(), ret;
+      if (o) {
+        ret = o[k];
+      }
+      return ret;
+    },
+    set: function (k, v) {
+      var that = this, o = that.find() || {};
+      o[k] = v;
+      ls.setItem(this.key, JSON.stringify(o));
+    },
+    remove: function (k) {
+      var that = this, o = that.find();
+      if (o) {
+        delete o[k];
+      }
+      ls.setItem(this.key, JSON.stringify(o));
+    },
+    clear: function () {
+      ls.removeItem(this.key);
+    }
+  };
+  module.exports = {
+    alloc: function (key) {
+      return new Storage(key);
+    }
+  };
+});
+define('sys/status-manager', ['./storage'], function (require, exports, module) {
+  var Storage = require('sys/storage').alloc('udata');
+  var set = function (k, v) {
+      Storage.set(k, v);
+    }, get = function (k) {
+      return Storage.get(k);
+    }, judge = function (k, v) {
+      var status = Storage.get(k);
+      return status === v;
+    }, remove = function (k) {
+      Storage.remove(k);
+    };
+  module.exports = {
+    isRunningStatus: function () {
+      return judge('UDataIsRunning', true);
+    },
+    changeRunningStatus: function (status) {
+      set('UDataIsRunning', status);
+    },
+    isFirstLoginInCurrentVersion: function () {
+      var currentVersion = chrome.app.getDetails().version;
+      return !judge('login', currentVersion);
+    },
+    hasLoginedInCurrentVersion: function () {
+      var currentVersion = chrome.app.getDetails().version;
+      set('login', currentVersion);
+    },
+    hasVisited: function (isNew) {
+      var version = chrome.app.getDetails().version;
+      set('udata-isNew', isNew);
+      set('udata-feature', version);
+    },
+    hasLayout: function (layout) {
+      set('udata-layout', layout);
+    },
+    hasFeature: function () {
+      var featureVersions = ['3.2.0'];
+      var version = chrome.app.getDetails().version;
+      for (var i = 0, l = featureVersions.length; i < l; i++) {
+        var v = featureVersions[i];
+        if (v == version) {
+          if (get('udata-feature') != version) {
+            return true;
+          }
+        }
+      }
+      return false;
+    },
+    hasMocked: function () {
+      set('hasMocked', true);
+    },
+    setTimestamp: function (category, timestamp) {
+      set('udata-' + category, timestamp);
+    },
+    getTimestamp: function (category) {
+      return get('udata-' + category);
+    }
+  };
+});
+define("sys/main", ["sys/config","sys/util","sys/storage","sys/status-manager"], function(require, exports, module) {
+var sys_config = require("sys/config");
+var sys_util = require("sys/util");
+var sys_storage = require("sys/storage");
+var sys_status_manager = require("sys/status-manager");
+var sys_browser, sys_main;
+sys_browser = function (exports) {
+  exports = {
+    getCurrentTab: function (callback) {
+      chrome.tabs.query({
+        active: true,
+        windowId: chrome.windows.WINDOW_ID_CURRENT
+      }, function (tabs) {
+        callback && callback(tabs[0]);
+      });
+    },
+    getActiveTab: function (callback) {
+      chrome.tabs.query({ active: true }, function (tabs) {
+        tabs.forEach(function (tab) {
+          callback && callback(tab);
+        });
+      });
+    },
+    setPopup: function (popup) {
+      chrome.browserAction.setPopup({ popup: popup });
+      return this;
+    },
+    clearPopUp: function () {
+      return this.setPopup('');
+    }
+  };
   return exports;
 }();
-anim_base_utils = function (exports) {
-  var Q = anim_base_queue, util = _util_, Dom = dom;
-  var runningKey = util.guid('ks-anim-unqueued-' + util.now() + '-');
-  function saveRunningAnim(anim) {
-    var node = anim.node, allRunning = Dom.data(node, runningKey);
-    if (!allRunning) {
-      Dom.data(node, runningKey, allRunning = {});
+sys_main = function (exports) {
+  var Browser = sys_browser, Config = sys_config, Util = sys_util, Storage = sys_storage, StatusManager = sys_status_manager;
+  var STATUS = Config.STATUS;
+  ICONS = Config.ICONS, errorStorage = Storage.alloc('error'), uDataStorage = Storage.alloc('udata');
+  function aplus() {
+    function aplus_init() {
+      window.TBI && TBI.Aplus.pageClick.processor.showPv();
     }
-    allRunning[util.stamp(anim)] = anim;
-  }
-  function removeRunningAnim(anim) {
-    var node = anim.node, allRunning = Dom.data(node, runningKey);
-    if (allRunning) {
-      delete allRunning[util.stamp(anim)];
-      if (util.isEmptyObject(allRunning)) {
-        Dom.removeData(node, runningKey);
-      }
-    }
-  }
-  function isAnimRunning(anim) {
-    var node = anim.node, allRunning = Dom.data(node, runningKey);
-    if (allRunning) {
-      return !!allRunning[util.stamp(anim)];
-    }
-    return 0;
-  }
-  var pausedKey = util.guid('ks-anim-paused-' + util.now() + '-');
-  function savePausedAnim(anim) {
-    var node = anim.node, paused = Dom.data(node, pausedKey);
-    if (!paused) {
-      Dom.data(node, pausedKey, paused = {});
-    }
-    paused[util.stamp(anim)] = anim;
-  }
-  function removePausedAnim(anim) {
-    var node = anim.node, paused = Dom.data(node, pausedKey);
-    if (paused) {
-      delete paused[util.stamp(anim)];
-      if (util.isEmptyObject(paused)) {
-        Dom.removeData(node, pausedKey);
-      }
-    }
-  }
-  function isAnimPaused(anim) {
-    var node = anim.node, paused = Dom.data(node, pausedKey);
-    if (paused) {
-      return !!paused[util.stamp(anim)];
-    }
-    return 0;
-  }
-  function pauseOrResumeQueue(node, queue, action) {
-    var allAnims = Dom.data(node, action === 'resume' ? pausedKey : runningKey), anims = util.merge(allAnims);
-    util.each(anims, function (anim) {
-      if (queue === undefined || anim.config.queue === queue) {
-        anim[action]();
-      }
-    });
+    var script = document.createElement('script'), head = document.querySelector('head');
+    script.text = '(' + aplus_init.toString() + ')()';
+    head.appendChild(script);
   }
   exports = {
-    saveRunningAnim: saveRunningAnim,
-    removeRunningAnim: removeRunningAnim,
-    isAnimPaused: isAnimPaused,
-    removePausedAnim: removePausedAnim,
-    savePausedAnim: savePausedAnim,
-    isAnimRunning: isAnimRunning,
-    isElPaused: function (node) {
-      var paused = Dom.data(node, pausedKey);
-      return paused && !util.isEmptyObject(paused);
-    },
-    isElRunning: function (node) {
-      var allRunning = Dom.data(node, runningKey);
-      return allRunning && !util.isEmptyObject(allRunning);
-    },
-    pauseOrResumeQueue: pauseOrResumeQueue,
-    stopEl: function (node, end, clearQueue, queue) {
-      if (clearQueue) {
-        if (queue === undefined) {
-          Q.clearQueues(node);
-        } else if (queue !== false) {
-          Q.clearQueue(node, queue);
-        }
+    init: function () {
+      localStorage['installed'] = 1;
+      this.currentTab = null;
+      this.isRunning = StatusManager.isRunningStatus();
+      if (!StatusManager.isFirstLoginInCurrentVersion()) {
+        this.isRunning = true;
+        StatusManager.changeRunningStatus(true);
       }
-      var allRunning = Dom.data(node, runningKey), anims = util.merge(allRunning);
-      util.each(anims, function (anim) {
-        if (queue === undefined || anim.config.queue === queue) {
-          anim.stop(end);
+      this.status = StatusManager.isRunningStatus() ? STATUS.RUNNING : STATUS.STOPPED;
+      this.setIcon(STATUS.RUNNING);
+      this.initEnv().initEvent();
+    },
+    start: function (tab) {
+      var id = tab.id || tab.tabId, url = tab.url;
+      var all = Config.isAplus(url);
+      this.setIcon(STATUS.RUNNING);
+      Browser.clearPopUp();
+      errorStorage.remove(id);
+      var query = Util.queryString(url.split('?')[1]);
+      var kissy = Config.kissy4;
+      if (query.hasOwnProperty('ukissy5')) {
+        kissy = Config.kissy5;
+      }
+      Util.injectKISSY(kissy, id, all, function () {
+        Util.injectScript(id, {
+          all: all,
+          path: Config.start + '?' + Date.now()
+        });
+      });
+    },
+    initEnv: function () {
+      var self = this, index = 0;
+      chrome.webNavigation.onCommitted.addListener(function (tab) {
+        var tabId = tab.tabId;
+        if (!self.isRunning) {
+          return;
+        }
+        if (tab.frameId !== 0) {
+          return;
+        }
+        var items = tab.url.split('?'), query = Util.queryString(items[1]);
+        if (/\.js$/.test(items[0]) && query.hasOwnProperty('udebug')) {
+          chrome.tabs.executeScript({
+            code: 'location.href="' + Config.urls.debug + '?src=' + encodeURIComponent(tab.url) + '"',
+            allFrames: true
+          });
+          return;
+        }
+        if (!Config.isValidUrl(tab.url)) {
+          self.setIcon(STATUS.ERROR);
+          errorStorage.set(tabId, { type: 'spm' });
+          return;
+        }
+        if (tab.frameId == 0) {
+          localStorage['loading'] = 'loading';
+          Browser.setPopup('popup/popup.html');
+          if (!self.timer) {
+            self.timer = setInterval(function () {
+              if (!localStorage['loading']) {
+                return;
+              }
+              index = ++index % 5;
+              var path = '/image/loading/' + (index + 1) + '.png';
+              chrome.browserAction.setIcon({ path: path });
+            }, 300);
+          }
         }
       });
+      chrome.webNavigation.onCompleted.addListener(function (tab) {
+        if (!self.isRunning) {
+          return;
+        }
+        var tabId = tab.tabId, all = Config.isAplus(tab.url);
+        if (tab.frameId !== 0 && !all) {
+          return;
+        }
+        var items = tab.url.split('?'), query = Util.queryString(items[1]);
+        if (!Config.isValidUrl(tab.url)) {
+          self.setIcon(STATUS.ERROR);
+          errorStorage.set(tabId, { type: 'spm' });
+          return;
+        }
+        if (self.timer) {
+          clearInterval(self.timer);
+          self.timer = null;
+        }
+        delete localStorage['loading'];
+        self.start(tab);
+      });
+      chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+        request.all = Config.isAplus(sender.url);
+        var query = sender.url && sender.url.split('?')[1];
+        if (request.type == 'loadjs') {
+          var tabId = sender.tab.id;
+          var wait = true;
+          request.debug = query && Util.queryString(query).hasOwnProperty('debug');
+          Util.injectScript(tabId, request, function () {
+            sendResponse({ ok: 1 });
+            wait = false;
+          });
+          return wait;
+        }
+        self.handleOnMessage.apply(self, arguments);
+        return true;
+      });
+      chrome.runtime.onInstalled.addListener(function () {
+        Browser.getCurrentTab(function (tab) {
+          if (Config.isValidUrl(tab.url)) {
+            chrome.tabs.reload(tab.id);
+          }
+        });
+      });
+      chrome.runtime.onSuspend.addListener(function () {
+        if (self.timer) {
+          clearInterval(self.timer);
+          self.timer = null;
+        }
+      });
+      if (localStorage.getItem('reload') == 'y') {
+        localStorage.removeItem('reload');
+        Browser.getCurrentTab(function (tab) {
+          if (Config.isValidUrl(tab.url)) {
+            chrome.tabs.reload(tab.id);
+          }
+        });
+      }
+      return this;
+    },
+    handleOnMessage: function (request, sender, sendResponse) {
+      var self = this, data = request.data;
+      switch (request.route) {
+      case '/start':
+        Browser.getCurrentTab(function (tab) {
+          self.start(tab);
+        });
+        break;
+      case '/options/open':
+        Browser.getCurrentTab(function (tab) {
+          self.currentTab = tab;
+          chrome.tabs.create({ url: Config.urls.options }, function (tab) {
+            self.optionTab = tab;
+          });
+        });
+        break;
+      case '/options/close':
+        Browser.getCurrentTab(function (tab) {
+          self.optionsSaved = true;
+          chrome.tabs.remove(tab.id);
+        });
+        break;
+      case '/layout':
+        StatusManager.hasLayout(data.layout);
+        break;
+      case '/popup/init':
+        var error = errorStorage.get(data.tabId);
+        if (error) {
+          sendResponse({
+            data: error,
+            config: Config.popup,
+            call: ['popup/index']
+          });
+        } else if (localStorage['loading']) {
+          sendResponse({
+            data: { type: 'loading' },
+            config: Config.popup,
+            call: ['popup/index']
+          });
+        }
+        break;
+      case '/popup/status':
+        sendResponse({ data: { status: localStorage['loading'] ? 'loading' : 'complete' } });
+        break;
+      case '/captureVisibleTab':
+        chrome.tabs.captureVisibleTab(function (dataURL) {
+          sendResponse(dataURL);
+        });
+        break;
+      case '/permissionRequest':
+        if (data.command == 'Request') {
+          Browser.getCurrentTab(function (tab) {
+            self.currentTab = tab;
+            chrome.tabs.create({
+              url: '/authorize.html?' + data.params + '&tabId=' + tab.id,
+              active: true
+            }, function (newTab) {
+              self.permissionTab = newTab;
+            });
+          });
+        }
+        break;
+      case '/permissionContains':
+        var params = {};
+        if (data.origins.length != 0) {
+          params['origins'] = data.origins;
+        }
+        if (data.permissions.length != 0) {
+          params['permissions'] = data.permissions;
+        }
+        chrome.permissions.contains(params, function (result) {
+          sendResponse(result);
+        });
+        break;
+      case '/permissionRemove':
+        var params = {};
+        if (data.origins.length != 0) {
+          params['origins'] = data.origins;
+        }
+        if (data.permissions.length != 0) {
+          params['permissions'] = data.origins;
+        }
+        chrome.permissions.remove(params, function (removed) {
+          sendResponse(removed);
+        });
+        break;
+      case '/popup':
+        var error = errorStorage.get(data.tabId);
+        if (error) {
+          sendResponse({ data: error });
+        }
+        break;
+      case '/today/notify': {
+          var category = data.category, timestamp = data.timestamp, recordTimeStamp = StatusManager.getTimestamp(category), isToday = self.isToday(recordTimeStamp);
+          if (!recordTimeStamp || recordTimeStamp && !isToday) {
+            statusMachine.setTimestamp(category, timestamp);
+            sendResponse({
+              type: 'timesOfToday',
+              notified: false
+            });
+          } else if (isToday) {
+            sendResponse({
+              type: 'timesOfToday',
+              notified: true
+            });
+          }
+          break;
+        }
+      case '/close': {
+          errorStorage.clear();
+          self.close();
+          sendResponse();
+          break;
+        }
+      case '/error':
+        self.setIcon(STATUS.ERROR);
+        Browser.getCurrentTab(function (tab) {
+          errorStorage.set(tab.id, data);
+        });
+        break;
+      case '/udata/running':
+        var layout = uDataStorage.get('udata-layout'), isNew = uDataStorage.get('udata-isNew') ? false : true, hasMocked = uDataStorage.get('hasMocked') ? true : false, hasFeature = StatusManager.hasFeature();
+        var status = self.isRunning ? STATUS.RUNNING : STATUS.STOPPED;
+        self.setIcon(status);
+        sendResponse({
+          data: {
+            running: self.isRunning,
+            layout: layout,
+            isNew: false,
+            hasFeature: false,
+            hasMocked: hasMocked
+          }
+        });
+        break;
+      case '/storage/get': {
+          sendResponse({ data: { storage: uDataStorage.find() } });
+          break;
+        }
+      case '/storage/set': {
+          uDataStorage.set(data.key, data.value);
+          sendResponse({ data: { storage: uDataStorage.find() } });
+          break;
+        }
+      case '/reload': {
+          var key = 'background_version', time = uDataStorage.get(key), _time = data.time;
+          console.log(time + '/' + _time);
+          if (_time) {
+            uDataStorage.set(key, _time);
+          }
+          if (data.reload || time && time !== _time) {
+            localStorage.setItem('reload', 'y');
+            chrome.runtime.reload();
+          }
+          break;
+        }
+      case '/tool/spmMarkInvalidLinks/open_tab': {
+          var tab_id;
+          var tab_url;
+          chrome.tabs.create(data, function (tab) {
+            tab_id = tab.id;
+            tab_url = tab.url;
+            sendResponse({ data: { tab_url: tab_url } });
+          });
+          return true;
+        }
+      case '/tools/spmFind/tab_opened': {
+          chrome.tabs.getSelected(null, function (tab) {
+            sendResponse();
+          });
+          return true;
+        }
+      case '/aplus/init': {
+          Browser.getCurrentTab(function (tab) {
+            chrome.tabs.executeScript({
+              code: '(' + aplus.toString() + ')()',
+              allFrames: true
+            });
+          });
+          return true;
+        }
+      case '/debug/module': {
+          if (data.code) {
+            localStorage[data.modname] = data.code;
+          } else {
+            if (localStorage[data.modname]) {
+              localStorage[data.modname] = null;
+              delete localStorage[data.modname];
+            }
+          }
+          sendResponse();
+          return true;
+        }
+      }
+    },
+    isToday: function (timestamp) {
+      if (!timestamp) {
+        return false;
+      }
+      var today = new Date(), year = today.getFullYear(), month = today.getMonth(), day = today.getDate(), yesterday = +new Date(year, month, day, 0, 0, 0), tomorrow = +new Date(year, month, day, 23, 59, 59);
+      if (timestamp >= yesterday && timestamp <= tomorrow) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    runCurrentTab: function () {
+      function startClient() {
+        if (!document.querySelector('#udata_running_lock')) {
+          if (!window.moment) {
+            location.reload();
+          } else {
+            chrome.runtime.sendMessage({ route: '/start' });
+          }
+        }
+      }
+      Browser.getCurrentTab(function (tab) {
+        chrome.tabs.executeScript({
+          code: '(' + startClient.toString() + ')()',
+          allFrames: false
+        });
+      });
+    },
+    initEvent: function () {
+      var self = this;
+      chrome.browserAction.onClicked.addListener(function (tab) {
+        if (self.isRunning) {
+          self.close();
+        } else {
+          if (!Config.isValidUrl(tab.url)) {
+            self.run();
+            self.setIcon(STATUS.ERROR);
+            errorStorage.set(tab.id, { type: 'spm' });
+            return;
+          }
+          self.runCurrentTab();
+          self.run();
+        }
+        self.notify();
+      });
+      chrome.tabs.onActivated.addListener(function () {
+        Browser.getCurrentTab(function (tab) {
+          if (self.isRunning) {
+            if (tab.status == 'complete') {
+              localStorage.removeItem('loading');
+            } else {
+              localStorage['loading'] = 'loading';
+            }
+            if (!Config.isValidUrl(tab.url)) {
+              self.setIcon(STATUS.ERROR);
+              errorStorage.set(tab.id, { type: 'spm' });
+              return;
+            }
+            if (errorStorage.get(tab.id)) {
+              self.setIcon(STATUS.ERROR);
+              return;
+            } else {
+              self.runCurrentTab();
+              self.setIcon(STATUS.RUNNING);
+              Browser.clearPopUp();
+            }
+          } else {
+            self.setIcon(STATUS.STOPPED);
+            Browser.clearPopUp();
+          }
+          self.notify();
+        });
+      });
+      chrome.tabs.onRemoved.addListener(function (tabId, removeInfo) {
+        errorStorage.remove(tabId);
+        if (!self.optionTab && !self.permissionTab) {
+          return;
+        }
+        if (self.optionTab && tabId == self.optionTab.id) {
+          if (self.currentTab) {
+            chrome.tabs.update(self.currentTab.id, { active: true }, function () {
+              if (self.optionsSaved) {
+                chrome.tabs.reload(self.currentTab.id, function () {
+                  self.currentTab = null;
+                });
+                self.optionsSaved = false;
+              }
+              self.currentTab = null;
+            });
+          }
+        }
+        if (self.permissionTab && tabId == self.permissionTab.id) {
+          if (self.currentTab) {
+            chrome.tabs.update(self.currentTab.id, { active: true }, function (tab) {
+              self.currentTab = null;
+            });
+          }
+        }
+      });
+      chrome.tabs.onReplaced.addListener(function (addedTabId, removedTabId) {
+        errorStorage.remove(removedTabId);
+      });
+      chrome.windows.onRemoved.addListener(function () {
+        errorStorage.clear();
+      });
+      return this;
+    },
+    notify: function () {
+      var self = this;
+      Browser.getActiveTab(function (tab) {
+        try {
+          chrome.tabs.sendMessage(tab.id, {
+            route: '/udata/update_status',
+            data: { running: self.isRunning }
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      });
+    },
+    run: function () {
+      this.isRunning = true;
+      this.setIcon(STATUS.RUNNING).updateStatus();
+      return this;
+    },
+    close: function () {
+      this.isRunning = false;
+      this.setIcon(STATUS.STOPPED).updateStatus();
+      Browser.clearPopUp();
+    },
+    updateStatus: function (status) {
+      StatusManager.changeRunningStatus(this.isRunning);
+      return this;
+    },
+    setIcon: function (status) {
+      var path = '/image/icon/' + ICONS[status];
+      chrome.browserAction.setIcon({ path: path });
+      if (status == STATUS.ERROR) {
+        Browser.setPopup('popup/popup.html');
+      } else {
+        Browser.clearPopUp();
+      }
+      return this;
     }
   };
   return exports;
 }();
-anim_base = function (exports) {
-  var Dom = dom, Utils = anim_base_utils, Q = anim_base_queue;
-  var Promise = promise;
-  var util = _util_, NodeType = Dom.NodeType, camelCase = util.camelCase, noop = util.noop, specialVals = {
-      toggle: 1,
-      hide: 1,
-      show: 1
-    };
-  var undef;
-  var defaultConfig = {
-      duration: 1,
-      easing: 'linear'
-    };
-  function syncComplete(self) {
-    var _backupProps, complete = self.config.complete;
-    if (!util.isEmptyObject(_backupProps = self._backupProps)) {
-      Dom.css(self.node, _backupProps);
-    }
-    if (complete) {
-      complete.call(self);
-    }
-  }
-  function AnimBase(node, to, duration, easing, complete) {
-    var self = this;
-    var config;
-    if (node.node) {
-      config = node;
-    } else {
-      if (util.isPlainObject(duration)) {
-        config = util.clone(duration);
-      } else {
-        config = { complete: complete };
-        if (duration) {
-          config.duration = duration;
-        }
-        if (easing) {
-          config.easing = easing;
-        }
-      }
-      config.node = node;
-      config.to = to;
-    }
-    config = util.merge(defaultConfig, config);
-    AnimBase.superclass.constructor.call(self);
-    Promise.Defer(self);
-    self.config = config;
-    node = config.node;
-    if (!util.isPlainObject(node)) {
-      node = Dom.get(config.node);
-    }
-    self.node = self.el = node;
-    self._backupProps = {};
-    self._propsData = {};
-    var newTo = {};
-    to = config.to;
-    for (var prop in to) {
-      newTo[camelCase(prop)] = to[prop];
-    }
-    config.to = newTo;
-  }
-  util.extend(AnimBase, Promise, {
-    prepareFx: noop,
-    runInternal: function () {
-      var self = this, config = self.config, node = self.node, val, _backupProps = self._backupProps, _propsData = self._propsData, to = config.to, defaultDelay = config.delay || 0, defaultDuration = config.duration;
-      Utils.saveRunningAnim(self);
-      util.each(to, function (val, prop) {
-        if (!util.isPlainObject(val)) {
-          val = { value: val };
-        }
-        _propsData[prop] = util.mix({
-          delay: defaultDelay,
-          easing: config.easing,
-          frame: config.frame,
-          duration: defaultDuration
-        }, val);
-      });
-      if (node.nodeType === NodeType.ELEMENT_NODE) {
-        if (to.width || to.height) {
-          var elStyle = node.style;
-          util.mix(_backupProps, {
-            overflow: elStyle.overflow,
-            'overflow-x': elStyle.overflowX,
-            'overflow-y': elStyle.overflowY
-          });
-          elStyle.overflow = 'hidden';
-        }
-        var exit, hidden;
-        util.each(_propsData, function (_propData, prop) {
-          val = _propData.value;
-          if (specialVals[val]) {
-            if (hidden === undef) {
-              hidden = Dom.css(node, 'display') === 'none';
-            }
-            if (val === 'hide' && hidden || val === 'show' && !hidden) {
-              self.stop(true);
-              exit = false;
-              return exit;
-            }
-            _backupProps[prop] = Dom.style(node, prop);
-            if (val === 'toggle') {
-              val = hidden ? 'show' : 'hide';
-            }
-            if (val === 'hide') {
-              _propData.value = 0;
-              _backupProps.display = 'none';
-            } else {
-              _propData.value = Dom.css(node, prop);
-              Dom.css(node, prop, 0);
-              Dom.show(node);
-            }
-          }
-          return undefined;
-        });
-        if (exit === false) {
-          return;
-        }
-      }
-      self.startTime = util.now();
-      if (util.isEmptyObject(_propsData)) {
-        self.__totalTime = defaultDuration * 1000;
-        self.__waitTimeout = setTimeout(function () {
-          self.stop(true);
-        }, self.__totalTime);
-      } else {
-        self.prepareFx();
-        self.doStart();
-      }
-    },
-    isRunning: function () {
-      return Utils.isAnimRunning(this);
-    },
-    isPaused: function () {
-      return Utils.isAnimPaused(this);
-    },
-    pause: function () {
-      var self = this;
-      if (self.isRunning()) {
-        self._runTime = util.now() - self.startTime;
-        self.__totalTime -= self._runTime;
-        Utils.removeRunningAnim(self);
-        Utils.savePausedAnim(self);
-        if (self.__waitTimeout) {
-          clearTimeout(self.__waitTimeout);
-        } else {
-          self.doStop();
-        }
-      }
-      return self;
-    },
-    doStop: noop,
-    doStart: noop,
-    resume: function () {
-      var self = this;
-      if (self.isPaused()) {
-        self.startTime = util.now() - self._runTime;
-        Utils.removePausedAnim(self);
-        Utils.saveRunningAnim(self);
-        if (self.__waitTimeout) {
-          self.__waitTimeout = setTimeout(function () {
-            self.stop(true);
-          }, self.__totalTime);
-        } else {
-          self.beforeResume();
-          self.doStart();
-        }
-      }
-      return self;
-    },
-    beforeResume: noop,
-    run: function () {
-      var self = this, q, queue = self.config.queue;
-      if (queue === false) {
-        self.runInternal();
-      } else {
-        q = Q.queue(self.node, queue, self);
-        if (q.length === 1) {
-          self.runInternal();
-        }
-      }
-      return self;
-    },
-    stop: function (finish) {
-      var self = this, node = self.node, q, queue = self.config.queue;
-      if (self.isResolved() || self.isRejected()) {
-        return self;
-      }
-      if (self.__waitTimeout) {
-        clearTimeout(self.__waitTimeout);
-        self.__waitTimeout = 0;
-      }
-      if (!self.isRunning() && !self.isPaused()) {
-        if (queue !== false) {
-          Q.remove(node, queue, self);
-        }
-        return self;
-      }
-      self.doStop(finish);
-      Utils.removeRunningAnim(self);
-      Utils.removePausedAnim(self);
-      var defer = self.defer;
-      if (finish) {
-        syncComplete(self);
-        defer.resolve([self]);
-      } else {
-        defer.reject([self]);
-      }
-      if (queue !== false) {
-        q = Q.dequeue(node, queue);
-        if (q && q[0]) {
-          q[0].runInternal();
-        }
-      }
-      return self;
-    }
-  });
-  var Statics = AnimBase.Statics = {
-      isRunning: Utils.isElRunning,
-      isPaused: Utils.isElPaused,
-      stop: Utils.stopEl,
-      Q: Q
-    };
-  util.each([
-    'pause',
-    'resume'
-  ], function (action) {
-    Statics[action] = function (node, queue) {
-      if (queue === null || typeof queue === 'string' || queue === false) {
-        return Utils.pauseOrResumeQueue(node, queue, action);
-      }
-      return Utils.pauseOrResumeQueue(node, undefined, action);
-    };
-  });
-  exports = AnimBase;
-  return exports;
-}();
-module.exports = anim_base;
+module.exports = sys_main;
 });

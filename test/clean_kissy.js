@@ -1,8 +1,7 @@
-KISSY.add("bee-demo/index", ["node","./mods/header"], function(S ,require, exports, module) {
+KISSY.add("bee-demo/index", ["node"], function(S ,require, exports, module) {
 var node = require("node");
-var modsHeader = require("./mods/header");
-var beeDemoModsHeader, beeDemoIndex;
-beeDemoModsHeader = function (exports) {
+var beeDemoModsIndex, beeDemoIndex;
+beeDemoModsIndex = function (exports) {
   var e = node;
   exports = {
     init: function () {
